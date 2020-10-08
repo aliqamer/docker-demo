@@ -1,0 +1,38 @@
+FROM centos:latest
+
+COPY sbt-0.13.15.rpm .
+# COPY scala-2.11.7.rpm .
+
+
+RUN echo --------------------------------------- Installing OpenJDK 8 --------------------------------------------------
+RUN dnf install -y unzip python3 python3-pip make java-1.8.0-openjdk which java-1.8.0-openjdk-devel wget jq
+
+         
+RUN echo --------------------------------------- Installing Gradle -----------------------------------------------------
+ENV GRADLE_VERSION 4.9
+ENV GRADLE_HOME /opt/gradle
+ARG GRADLE_DOWNLOAD_SHA256=e66e69dce8173dd2004b39ba93586a184628bc6c28461bc771d6835f7f9b0d28
+RUN set -o errexit -o nounset \
+    && echo "Downloading Gradle" \
+    && wget --no-verbose --output-document=gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+    \
+    && echo "Checking download hash" \
+    && echo "${GRADLE_DOWNLOAD_SHA256} *gradle.zip" | sha256sum --check - \
+    \
+    && echo "Installing Gradle" \
+    && unzip gradle.zip \
+    && rm gradle.zip \
+    && mv "gradle-${GRADLE_VERSION}" "${GRADLE_HOME}/" \
+    && ln --symbolic "${GRADLE_HOME}/bin/gradle" /usr/bin/gradle \
+    \
+    && echo "Testing Gradle installation" \
+    && gradle --version
+
+RUN echo --------------------------------------- Installing SBT ------------------------------------------------------
+RUN yum localinstall sbt-0.13.15.rpm -y
+# RUN yum localinstall scala-2.11.7.rpm -y
+ENV JAVA_HOME=/usr/lib/jvm/java
+RUN rm sbt-0.13.15.rpm scala-2.11.7.rpm && \
+    java -version && \
+	sbt --version 
+
